@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 const db = require('./db');
 const parser = require('./parser');
 const analytics = require('./analytics');
@@ -72,7 +72,8 @@ app.post('/api/students/ingest', upload.single('resume'), async (req, res) => {
         // Handle PDF file upload parsing
         if (req.file) {
             try {
-                const pdfData = await pdfParse(req.file.buffer);
+                const pdfParser = new PDFParse({ data: req.file.buffer, verbosity: 0 });
+                const pdfData = await pdfParser.getText();
                 profileText = pdfData.text;
             } catch (pdfErr) {
                 console.error("PDF parsing failed:", pdfErr.message);
