@@ -1,0 +1,23 @@
+{
+  "name": "intelligent-student-profiling-platform",
+  "version": "1.0.0",
+  "description": "An intelligent student profiling platform that analyzes resumes and maps skills into a ShaktiDB graph.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js"
+  },
+  "keywords": [
+    "shaktidb",
+    "skills-graph",
+    "student-profiling"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "pg": "^8.12.0"
+  }
+}

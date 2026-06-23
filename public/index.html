@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Intelligent Student Profiling Platform - Graph-based skill mapping powered by ShaktiDB.">
+    <title>SHAKTI.graph | Intelligent Student Profiling Platform</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Vis.js Network for graph visualization -->
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-brain-circuit brand-icon"></i>
+                <span class="brand-text">SHAKTI<span class="highlight">.graph</span></span>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" id="nav-dashboard" onclick="switchTab('dashboard')">
+                    <i class="fa-solid fa-chart-line"></i> Dashboard
+                </button>
+                <button class="nav-btn" id="nav-ingest" onclick="switchTab('ingest')">
+                    <i class="fa-solid fa-file-import"></i> Skill Ingestion
+                </button>
+                <button class="nav-btn" id="nav-graph" onclick="switchTab('graph')">
+                    <i class="fa-solid fa-circle-nodes"></i> Skill Graph
+                </button>
+                <button class="nav-btn" id="nav-careers" onclick="switchTab('careers')">
+                    <i class="fa-solid fa-briefcase"></i> Career Matcher
+                </button>
+                <button class="nav-btn" id="nav-teams" onclick="switchTab('teams')">
+                    <i class="fa-solid fa-users-gear"></i> Team Builder
+                </button>
+            </nav>
+
+            <div class="db-status-widget">
+                <div class="status-header">
+                    <span class="status-title">ShaktiDB Status</span>
+                    <span class="status-indicator" id="db-indicator">Mock Mode</span>
+                </div>
+                <p class="status-desc" id="db-desc">Running in local simulation database mode.</p>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="header-left">
+                    <h1 id="page-title">Platform Dashboard</h1>
+                    <p class="subtitle" id="page-subtitle">Overview of student profiles, aggregated skills, and database activity.</p>
+                </div>
+                <div class="header-right">
+                    <button class="action-btn-secondary" id="clear-logs-btn" onclick="clearDbLogs()">
+                        <i class="fa-solid fa-trash-can"></i> Clear DB Logs
+                    </button>
+                </div>
+            </header>
+
+            <!-- Container for current views -->
+            <div class="view-container">
+
+                <!-- 1. DASHBOARD VIEW -->
+                <section class="tab-view active" id="view-dashboard">
+                    <div class="metrics-grid">
+                        <div class="metric-card glass">
+                            <div class="metric-icon purple"><i class="fa-solid fa-graduation-cap"></i></div>
+                            <div class="metric-info">
+                                <span class="metric-label">Total Student Nodes</span>
+                                <h3 class="metric-value" id="stat-students">0</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card glass">
+                            <div class="metric-icon blue"><i class="fa-solid fa-cubes"></i></div>
+                            <div class="metric-info">
+                                <span class="metric-label">Mapped Skills Taxonomy</span>
+                                <h3 class="metric-value" id="stat-skills">0</h3>
+                            </div>
+                        </div>
+                        <div class="metric-card glass">
+                            <div class="metric-icon cyan"><i class="fa-solid fa-network-wired"></i></div>
+                            <div class="metric-info">
+                                <span class="metric-label">Skill Associations</span>
+                                <h3 class="metric-value" id="stat-edges">0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-split">
+                        <!-- Student Directory -->
+                        <div class="split-left glass">
+                            <div class="panel-header">
+                                <h2>Student Profiles Directory</h2>
+                                <span class="badge" id="student-count-badge">0 Students</span>
+                            </div>
+                            <div class="search-bar">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                                <input type="text" id="student-search" placeholder="Search by name, email, or skill..." oninput="filterStudents()">
+                            </div>
+                            <div class="student-list" id="student-list-container">
+                                <!-- Student cards will be rendered here dynamically -->
+                                <div class="loading-placeholder">
+                                    <i class="fa-solid fa-spinner fa-spin"></i> Loading directory...
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Active Student Details Profile -->
+                        <div class="split-right glass" id="student-profile-panel">
+                            <div class="profile-placeholder" id="profile-unselected">
+                                <i class="fa-solid fa-id-card-clip"></i>
+                                <h3>Select a student profile</h3>
+                                <p>Choose a profile from the directory to review their skill graph, career compatibility, and analytics.</p>
+                            </div>
+                            
+                            <div class="profile-details hidden" id="profile-selected">
+                                <div class="profile-header-card">
+                                    <div class="profile-avatar"><i class="fa-solid fa-user-astronaut"></i></div>
+                                    <div class="profile-meta">
+                                        <h2 id="profile-name">Student Name</h2>
+                                        <span id="profile-email">email@example.edu</span>
+                                        <a href="#" target="_blank" id="profile-github" class="github-link"><i class="fa-brands fa-github"></i> View Profile</a>
+                                    </div>
+                                    <button class="delete-btn" onclick="deleteStudentProfile()" title="Delete Profile">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
+
+                                <div class="profile-skills-summary">
+                                    <h3>Skill Summary</h3>
+                                    <div class="skills-chips-container" id="profile-skills-chips">
+                                        <!-- Skill badges will go here -->
+                                    </div>
+                                </div>
+
+                                <div class="profile-quick-actions">
+                                    <h3>Quick Analytics</h3>
+                                    <div class="actions-grid">
+                                        <button class="action-card-btn" onclick="viewStudentGraph()">
+                                            <i class="fa-solid fa-circle-nodes"></i>
+                                            <span>Explore Skill Graph</span>
+                                        </button>
+                                        <button class="action-card-btn" onclick="viewCareerMatch()">
+                                            <i class="fa-solid fa-briefcase"></i>
+                                            <span>Check Career Gaps</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. INGESTION VIEW -->
+                <section class="tab-view" id="view-ingest">
+                    <div class="ingest-grid">
+                        <div class="ingest-form-card glass">
+                            <h2>Profile Ingestion & Parsing</h2>
+                            <p class="panel-desc">Paste a resume, list of projects, certifications, or repository descriptions. The system will use AI rules to extract technical/soft skills and construct graph associations in ShaktiDB.</p>
+                            
+                            <form id="ingest-form" onsubmit="handleIngest(event)">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="ingest-name">Full Name <span class="required">*</span></label>
+                                        <input type="text" id="ingest-name" required placeholder="e.g. Rahul Verma">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ingest-email">Email Address <span class="required">*</span></label>
+                                        <input type="email" id="ingest-email" required placeholder="e.g. rahul@university.edu">
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="ingest-github">GitHub Profile URL (Optional)</label>
+                                        <input type="text" id="ingest-github" placeholder="e.g. github.com/rahulv">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="ingest-source">Profile Ingestion Source</label>
+                                        <select id="ingest-source">
+                                            <option value="resume_upload">Resume Text</option>
+                                            <option value="github_profile">GitHub Repositories / Readme</option>
+                                            <option value="cert_verification">Certification Documents</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="ingest-text">Paste Profile / Resume / Repository Data <span class="required">*</span></label>
+                                    <textarea id="ingest-text" required placeholder="Paste resume contents, project descriptions, list of certifications, or code profiles here...
+Example:
+- Mapped system architectures using React, Node.js, and PostgreSQL.
+- Certified Expert in Docker containerization.
+- Demonstrated exceptional Leadership and Teamwork leading a group of 5."></textarea>
+                                </div>
+
+                                <div class="form-group-checkbox">
+                                    <label class="checkbox-container">
+                                        <input type="checkbox" id="ingest-demo-data">
+                                        <span class="checkmark"></span>
+                                        Load Sample Student Resume Data (Auto-populate)
+                                    </label>
+                                </div>
+
+                                <button type="submit" class="submit-btn" id="ingest-submit">
+                                    <i class="fa-solid fa-microchip"></i> Parse & Save into ShaktiDB
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Live parsing extraction feedback -->
+                        <div class="ingest-feedback-card glass">
+                            <h2>Extraction Analytics</h2>
+                            <div class="feedback-placeholder" id="feedback-empty">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <h3>Parsing Engine Idle</h3>
+                                <p>Submit a profile on the left. The heuristic NLP engine will display the recognized nodes and edge connections here in real-time.</p>
+                            </div>
+
+                            <div class="feedback-results hidden" id="feedback-success">
+                                <div class="success-banner">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    <div>
+                                        <h4>Ingestion Complete!</h4>
+                                        <span id="feedback-student-meta">Rahul Verma (rahul@university.edu)</span>
+                                    </div>
+                                </div>
+
+                                <div class="parsed-skills-section">
+                                    <h3>Extracted Skills & Attributes</h3>
+                                    <div class="skills-table-wrapper">
+                                        <table class="parsed-skills-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Skill Name</th>
+                                                    <th>Proficiency</th>
+                                                    <th>Confidence</th>
+                                                    <th>Source</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="parsed-skills-body">
+                                                <!-- Populated dynamically -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div class="feedback-action">
+                                    <button class="action-btn-primary" onclick="viewIngestedStudentGraph()">
+                                        <i class="fa-solid fa-circle-nodes"></i> View Generated Graph
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. GRAPH EXPLORER VIEW -->
+                <section class="tab-view" id="view-graph">
+                    <div class="graph-panel glass">
+                        <div class="graph-header">
+                            <div class="graph-selector-group">
+                                <label for="graph-student-select">Active Graph Node:</label>
+                                <select id="graph-student-select" onchange="loadStudentGraph()">
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+                            <div class="graph-legend">
+                                <span class="legend-item"><span class="color-dot student"></span> Student</span>
+                                <span class="legend-item"><span class="color-dot lang"></span> Languages</span>
+                                <span class="legend-item"><span class="color-dot framework"></span> Frameworks</span>
+                                <span class="legend-item"><span class="color-dot db"></span> Databases</span>
+                                <span class="legend-item"><span class="color-dot devops"></span> Cloud/DevOps</span>
+                                <span class="legend-item"><span class="color-dot soft"></span> Soft Skills</span>
+                            </div>
+                        </div>
+                        <div class="graph-canvas-container">
+                            <div id="skill-network-canvas"></div>
+                        </div>
+                        <div class="graph-footer">
+                            <p><i class="fa-solid fa-circle-info"></i> Nodes represent students and skills. Drag nodes to explore. Hover over skills to see proficiency (edge thickness) and source confidence.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. CAREER MATCHER VIEW -->
+                <section class="tab-view" id="view-careers">
+                    <div class="careers-layout">
+                        <!-- Left Selector & Role list -->
+                        <div class="careers-sidebar glass">
+                            <h2>Select Student Profile</h2>
+                            <select id="career-student-select" onchange="loadCareerMatches()">
+                                <!-- Populated dynamically -->
+                            </select>
+
+                            <h3 class="sidebar-heading">Industry Careers</h3>
+                            <div class="career-roles-list" id="career-roles-container">
+                                <!-- Roles list will go here -->
+                            </div>
+                        </div>
+
+                        <!-- Right gap analysis detail -->
+                        <div class="careers-content glass">
+                            <div class="career-details-placeholder" id="career-unselected">
+                                <i class="fa-solid fa-chart-radar"></i>
+                                <h3>Select a Career Role</h3>
+                                <p>Select a student profile and click on a career path from the left sidebar to analyze skill compatibility and build a learning roadmap.</p>
+                            </div>
+
+                            <div class="career-analysis-details hidden" id="career-selected">
+                                <div class="career-header-row">
+                                    <div>
+                                        <h2 id="career-title">Full Stack Developer</h2>
+                                        <p id="career-desc" class="career-desc">Description of role</p>
+                                    </div>
+                                    <div class="match-circle-container">
+                                        <div class="match-percentage" id="career-match-val">85%</div>
+                                        <div class="match-label">Match Score</div>
+                                    </div>
+                                </div>
+
+                                <div class="gaps-split">
+                                    <!-- Gap Matrix -->
+                                    <div class="gap-matrix-panel">
+                                        <h3>Skill Competency Matrix</h3>
+                                        <div class="gaps-list" id="gap-skills-list">
+                                            <!-- List of skills with gaps -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Learning Path Map -->
+                                    <div class="learning-path-panel">
+                                        <h3>Prerequisite Learning Path</h3>
+                                        <p class="panel-desc">Algorithmic roadmap derived from traversing the skill dependencies graph to bridge your gaps.</p>
+                                        <div class="learning-steps" id="learning-path-steps">
+                                            <!-- Steps will go here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 5. TEAM BUILDER VIEW -->
+                <section class="tab-view" id="view-teams">
+                    <div class="teams-layout">
+                        <div class="teams-sidebar glass">
+                            <h2>Project Blueprints</h2>
+                            <p class="panel-desc">Select an upcoming institutional project. The system runs a constraint-satisfaction graph matching algorithm to assemble the optimal balanced team.</p>
+                            
+                            <div class="projects-list" id="projects-container">
+                                <!-- Projects will go here -->
+                            </div>
+                        </div>
+
+                        <div class="teams-content glass">
+                            <div class="team-placeholder" id="team-unselected">
+                                <i class="fa-solid fa-people-group"></i>
+                                <h3>Select a Project Blueprint</h3>
+                                <p>Select a project from the list on the left to trigger the automatic team assembly engine.</p>
+                            </div>
+
+                            <div class="team-results hidden" id="team-selected">
+                                <div class="team-header-row">
+                                    <div>
+                                        <h2 id="project-title">E-Commerce Web Portal</h2>
+                                        <p id="project-desc" class="project-desc">Description</p>
+                                    </div>
+                                    <div class="team-match-score">
+                                        <span class="score-num" id="team-coverage-val">100%</span>
+                                        <span class="score-lbl">Role Coverage</span>
+                                    </div>
+                                </div>
+
+                                <div class="team-matrix-row">
+                                    <div class="team-members-panel">
+                                        <h3>Assembled Team Members</h3>
+                                        <div class="team-members-list" id="team-members-list">
+                                            <!-- Student list -->
+                                        </div>
+                                    </div>
+
+                                    <div class="team-assignments-panel">
+                                        <h3>Role Assignments & Competencies</h3>
+                                        <div class="assignments-list" id="team-assignments-list">
+                                            <!-- Assignments -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- ShaktiDB live query console (grows from bottom) -->
+            <footer class="db-console glass">
+                <div class="console-header" onclick="toggleConsole()">
+                    <div class="console-title">
+                        <i class="fa-solid fa-terminal"></i>
+                        <span>ShaktiDB Live SQL Console</span>
+                    </div>
+                    <div class="console-controls">
+                        <span class="console-status" id="console-status-text">Connected</span>
+                        <i class="fa-solid fa-chevron-up" id="console-toggle-icon"></i>
+                    </div>
+                </div>
+                <div class="console-body" id="console-log-body">
+                    <!-- Logs will print here dynamically -->
+                </div>
+            </footer>
+        </main>
+    </div>
+
+    <!-- App Logic Script -->
+    <script src="app.js"></script>
+</body>
+</html>
