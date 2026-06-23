@@ -186,20 +186,16 @@
                                     <div class="form-group">
                                         <label for="ingest-source">Profile Ingestion Source</label>
                                         <select id="ingest-source">
-                                            <option value="resume_upload">Resume Text</option>
-                                            <option value="github_profile">GitHub Repositories / Readme</option>
+                                            <option value="resume_upload">PDF Resume Document</option>
+                                            <option value="github_profile">GitHub Profile / Readme</option>
                                             <option value="cert_verification">Certification Documents</option>
                                         </select>
                                     </div>
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="ingest-text">Paste Profile / Resume / Repository Data <span class="required">*</span></label>
-                                    <textarea id="ingest-text" required placeholder="Paste resume contents, project descriptions, list of certifications, or code profiles here...
-Example:
-- Mapped system architectures using React, Node.js, and PostgreSQL.
-- Certified Expert in Docker containerization.
-- Demonstrated exceptional Leadership and Teamwork leading a group of 5."></textarea>
+                                    <label for="ingest-file">Upload PDF Resume / Profile Document <span class="required" id="file-required-star">*</span></label>
+                                    <input type="file" id="ingest-file" accept=".pdf" required style="padding: 10px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-main);">
                                 </div>
 
                                 <div class="form-group-checkbox">

@@ -40,17 +40,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Setup demo checkbox listener
     document.getElementById('ingest-demo-data').addEventListener('change', (e) => {
+        const fileStar = document.getElementById('file-required-star');
+        const fileInput = document.getElementById('ingest-file');
+        
         if (e.target.checked) {
             document.getElementById('ingest-name').value = sampleResumeData.name;
             document.getElementById('ingest-email').value = sampleResumeData.email;
             document.getElementById('ingest-github').value = sampleResumeData.githubUrl;
             document.getElementById('ingest-source').value = sampleResumeData.source;
-            document.getElementById('ingest-text').value = sampleResumeData.profileText;
+            fileInput.required = false;
+            if (fileStar) fileStar.style.display = 'none';
         } else {
             document.getElementById('ingest-name').value = '';
             document.getElementById('ingest-email').value = '';
             document.getElementById('ingest-github').value = '';
-            document.getElementById('ingest-text').value = '';
+            fileInput.required = true;
+            if (fileStar) fileStar.style.display = 'inline';
+            fileInput.value = '';
         }
     });
 });
@@ -254,13 +260,32 @@ async function handleIngest(event) {
     const email = document.getElementById('ingest-email').value;
     const githubUrl = document.getElementById('ingest-github').value;
     const source = document.getElementById('ingest-source').value;
-    const profileText = document.getElementById('ingest-text').value;
+    const isDemoChecked = document.getElementById('ingest-demo-data').checked;
+    const fileInput = document.getElementById('ingest-file');
 
     try {
+        // Use FormData for multipart/form-data PDF upload
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('email', email);
+        formData.append('githubUrl', githubUrl);
+        formData.append('source', source);
+
+        if (isDemoChecked) {
+            // Send default text directly if demo loaded
+            formData.append('profileText', sampleResumeData.profileText);
+        } else if (fileInput.files.length > 0) {
+            formData.append('resume', fileInput.files[0]);
+        } else {
+            alert("Please select a PDF file to upload.");
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-microchip"></i> Parse & Save into ShaktiDB';
+            return;
+        }
+
         const res = await fetch('/api/students/ingest', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, email, githubUrl, profileText, source })
+            body: formData
         });
         const data = await res.json();
         

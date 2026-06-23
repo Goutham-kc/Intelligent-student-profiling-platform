@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
 const db = require('./db');
 const parser = require('./parser');
 const analytics = require('./analytics');
@@ -8,6 +10,8 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 app.use(cors());
 app.use(express.json());
@@ -56,14 +60,30 @@ app.get('/api/students/:id/skills', async (req, res) => {
 });
 
 // API 4: Ingest a new resume or coding profile
-app.post('/api/students/ingest', async (req, res) => {
-    const { name, email, githubUrl, profileText, source } = req.body;
+app.post('/api/students/ingest', upload.single('resume'), async (req, res) => {
+    const { name, email, githubUrl, source } = req.body;
+    let { profileText } = req.body;
 
-    if (!name || !email || !profileText) {
-        return res.status(400).json({ error: "Required fields missing: name, email, profileText." });
+    if (!name || !email) {
+        return res.status(400).json({ error: "Required fields missing: name, email." });
     }
 
     try {
+        // Handle PDF file upload parsing
+        if (req.file) {
+            try {
+                const pdfData = await pdfParse(req.file.buffer);
+                profileText = pdfData.text;
+            } catch (pdfErr) {
+                console.error("PDF parsing failed:", pdfErr.message);
+                return res.status(400).json({ error: "Failed to parse PDF resume: " + pdfErr.message });
+            }
+        }
+
+        if (!profileText || profileText.trim() === '') {
+            return res.status(400).json({ error: "No profile text or PDF file provided." });
+        }
+
         // Step 1: Create or update student node
         let student;
         const checkStudent = await db.query("SELECT * FROM students WHERE email = $1", [email]);
