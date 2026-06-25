@@ -66,3 +66,21 @@ CREATE TABLE IF NOT EXISTS project_requirements (
     min_proficiency INTEGER CHECK (min_proficiency BETWEEN 1 AND 5),
     PRIMARY KEY (project_id, skill_id, role_name)
 );
+
+-- 9. Academic Records Table
+CREATE TABLE IF NOT EXISTS academics (
+    id SERIAL PRIMARY KEY,
+    student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+    semester VARCHAR(20) NOT NULL,
+    gpa NUMERIC(3, 2),
+    attendance NUMERIC(5, 2)
+);
+
+-- 10. Quiz Questions Table
+CREATE TABLE IF NOT EXISTS quiz_questions (
+    id SERIAL PRIMARY KEY,
+    skill_id INTEGER REFERENCES skills(id) ON DELETE CASCADE,
+    question TEXT NOT NULL,
+    options TEXT[] NOT NULL,
+    answer_idx INTEGER NOT NULL
+);

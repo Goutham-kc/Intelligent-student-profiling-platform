@@ -1,5 +1,85 @@
 const db = require('./db');
 
+const SKILL_RESOURCES = {
+    "JavaScript": [
+        { title: "MDN Web Docs - JavaScript Guide", url: "https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide", platform: "Mozilla" },
+        { title: "NPTEL - Programming in JavaScript", url: "https://nptel.ac.in/", platform: "NPTEL / IIT" },
+        { title: "JavaScript: The Definitive Guide (Book)", url: "https://www.oreilly.com/library/view/javascript-the-definitive/9781491952016/", platform: "Book" }
+    ],
+    "Python": [
+        { title: "NPTEL - Joy of Computing using Python (IIT Madras)", url: "https://onlinecourses.nptel.ac.in/noc23_cs95/preview", platform: "NPTEL" },
+        { title: "Python for Everybody Specialization", url: "https://www.coursera.org/specializations/python", platform: "Coursera" }
+    ],
+    "Java": [
+        { title: "NPTEL - Programming in Java (IIT Kharagpur)", url: "https://onlinecourses.nptel.ac.in/noc23_cs74/preview", platform: "NPTEL" },
+        { title: "Java Programming and Software Engineering Fundamentals", url: "https://www.coursera.org/specializations/java-programming", platform: "Coursera" }
+    ],
+    "C++": [
+        { title: "NPTEL - Programming in C++ (IIT Kharagpur)", url: "https://onlinecourses.nptel.ac.in/noc23_cs53/preview", platform: "NPTEL" },
+        { title: "Learn C++ Course", url: "https://www.codecademy.com/learn/learn-c-plus-plus", platform: "Codecademy" }
+    ],
+    "Go": [
+        { title: "Go Dev - Tour of Go", url: "https://tour.golang.org/", platform: "Official" },
+        { title: "Programming with Google Go Specialization", url: "https://www.coursera.org/specializations/google-golang", platform: "Coursera" }
+    ],
+    "React": [
+        { title: "Official React Documentation", url: "https://react.dev", platform: "Official" },
+        { title: "Meta Front-End Developer Professional Certificate", url: "https://www.coursera.org/professional-certificates/meta-front-end-developer", platform: "Coursera" }
+    ],
+    "Express": [
+        { title: "ExpressJS - Getting Started Guide", url: "https://expressjs.com/en/starter/installing.html", platform: "Official" },
+        { title: "Server-side Development with NodeJS, Express and MongoDB (IIT Bombay)", url: "https://www.coursera.org/learn/server-side-nodejs", platform: "Coursera" }
+    ],
+    "Django": [
+        { title: "Django Girls Tutorial", url: "https://tutorial.djangogirls.org/", platform: "Community" },
+        { title: "Django for Everybody Specialization", url: "https://www.coursera.org/specializations/django", platform: "Coursera" }
+    ],
+    "Spring Boot": [
+        { title: "Spring Academy - Building Web Applications with Spring Boot", url: "https://spring.academy/", platform: "Official" },
+        { title: "Java Spring Framework & Spring Boot Masterclass", url: "https://www.udemy.com/course/spring-hibernate-tutorial/", platform: "Udemy" }
+    ],
+    "PostgreSQL": [
+        { title: "NPTEL - Database Management System (IIT Kharagpur)", url: "https://onlinecourses.nptel.ac.in/noc23_cs114/preview", platform: "NPTEL" },
+        { title: "PostgreSQL Tutorial for Beginners", url: "https://www.postgresqltutorial.com/", platform: "Community" }
+    ],
+    "MongoDB": [
+        { title: "MongoDB University - Intro to MongoDB", url: "https://university.mongodb.com/", platform: "Official" },
+        { title: "Introduction to MongoDB", url: "https://www.coursera.org/learn/introduction-mongodb", platform: "Coursera" }
+    ],
+    "ShaktiDB": [
+        { title: "ShaktiDB Official Integration Guide", url: "https://github.com/shaktidb/shaktidb", platform: "Official" },
+        { title: "Understanding ShaktiDB Relational Graph Engine", url: "https://shaktidb.org/docs/relational-graph-engine", platform: "Official Documentation" }
+    ],
+    "Docker": [
+        { title: "Docker Deep Dive (Book by Nigel Poulton)", url: "https://nigelpoulton.com/books/", platform: "Book" },
+        { title: "Docker Containerization Essentials", url: "https://cognitiveclass.ai/courses/docker-essentials", platform: "IBM Cognitive Class" }
+    ],
+    "AWS": [
+        { title: "AWS Cloud Practitioner Essentials", url: "https://aws.amazon.com/training/digital/aws-cloud-practitioner-essentials/", platform: "Official" },
+        { title: "NPTEL - Cloud Computing (IIT Kharagpur)", url: "https://onlinecourses.nptel.ac.in/noc23_cs89/preview", platform: "NPTEL" }
+    ],
+    "Git": [
+        { title: "Pro Git Book (Free Online)", url: "https://git-scm.com/book/en/v2", platform: "Official Book" },
+        { title: "Version Control with Git", url: "https://www.coursera.org/learn/version-control-with-git", platform: "Coursera" }
+    ],
+    "Leadership": [
+        { title: "NPTEL - Leadership and Team Effectiveness (IIT Kharagpur)", url: "https://onlinecourses.nptel.ac.in/noc23_mg31/preview", platform: "NPTEL" },
+        { title: "Strategic Leadership and Management Specialization", url: "https://www.coursera.org/specializations/strategic-leadership", platform: "Coursera" }
+    ],
+    "Communication": [
+        { title: "NPTEL - Employment Communication A Lab Based Course (IIT Kharagpur)", url: "https://onlinecourses.nptel.ac.in/noc23_hs59/preview", platform: "NPTEL" },
+        { title: "Effective Communication Specialization", url: "https://www.coursera.org/specializations/effective-communication", platform: "Coursera" }
+    ],
+    "Teamwork": [
+        { title: "NPTEL - Enhancing Soft Skills and Personality (IIT Kanpur)", url: "https://onlinecourses.nptel.ac.in/noc23_hs84/preview", platform: "NPTEL" },
+        { title: "High-Performance Collaboration: Leadership, Teamwork, and Negotiation", url: "https://www.coursera.org/learn/collaboration-negotiation", platform: "Coursera" }
+    ],
+    "Problem Solving": [
+        { title: "Creative Problem Solving Course", url: "https://www.coursera.org/learn/creative-problem-solving", platform: "Coursera" },
+        { title: "Introduction to Mathematical Thinking", url: "https://www.coursera.org/learn/mathematical-thinking", platform: "Coursera" }
+    ]
+};
+
 /**
  * Perform skill gap analysis for a student against all predefined career roles
  * @param {number} studentId 
@@ -163,7 +243,8 @@ async function buildLearningPath(studentId, roleId) {
                         type: 'Prerequisite',
                         reason: `Required before learning ${skillLookup[skillId].name}`,
                         currentProficiency: studentProf,
-                        targetProficiency: 3
+                        targetProficiency: 3,
+                        resources: SKILL_RESOURCES[skillLookup[parentId].name] || []
                     });
                 }
             }
@@ -183,7 +264,8 @@ async function buildLearningPath(studentId, roleId) {
             type: 'Core Requirement',
             reason: currentProf === 0 ? `Acquire basic and advanced capability` : `Bridge proficiency gap from ${currentProf} to ${gap.min_proficiency}`,
             currentProficiency: currentProf,
-            targetProficiency: gap.min_proficiency
+            targetProficiency: gap.min_proficiency,
+            resources: SKILL_RESOURCES[gap.name] || []
         });
     }
 

@@ -59,6 +59,20 @@ app.get('/api/students/:id/skills', async (req, res) => {
     }
 });
 
+// API 3.5: Get student academic progression records
+app.get('/api/students/:id/academics', async (req, res) => {
+    try {
+        const studentId = parseInt(req.params.id);
+        const result = await db.query(
+            `SELECT semester, gpa, attendance FROM academics WHERE student_id = $1 ORDER BY semester ASC`,
+            [studentId]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // API 4: Ingest a new resume or coding profile
 app.post('/api/students/ingest', upload.single('resume'), async (req, res) => {
     const { name, email, githubUrl, source } = req.body;
@@ -243,6 +257,44 @@ app.get('/api/db/logs', (req, res) => {
 app.post('/api/db/logs/clear', (req, res) => {
     db.clearLogs();
     res.json({ success: true });
+});
+
+// API 15: Retrieve assessment questions for a specific skill
+app.get('/api/skills/:id/questions', async (req, res) => {
+    try {
+        const skillId = parseInt(req.params.id);
+        const result = await db.query(
+            "SELECT id, question, options, answer_idx FROM quiz_questions WHERE skill_id = $1",
+            [skillId]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// API 16: Verify skill assessment and update database
+app.post('/api/students/:id/skills/verify', async (req, res) => {
+    try {
+        const studentId = parseInt(req.params.id);
+        const { skillId, proficiency, confidence, source } = req.body;
+        
+        if (!skillId || !proficiency) {
+            return res.status(400).json({ error: "Missing required fields: skillId, proficiency." });
+        }
+
+        await db.query(
+            `INSERT INTO student_skills (student_id, skill_id, proficiency, confidence_score, source)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (student_id, skill_id) 
+             DO UPDATE SET proficiency = EXCLUDED.proficiency, confidence_score = EXCLUDED.confidence_score, source = EXCLUDED.source, updated_at = CURRENT_TIMESTAMP`,
+            [studentId, parseInt(skillId), parseInt(proficiency), parseFloat(confidence || 1.0), source || 'assessment_verification']
+        );
+
+        res.json({ success: true, message: "Skill successfully verified and updated!" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // Start Server

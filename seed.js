@@ -198,6 +198,10 @@ async function runSeed() {
                 (${s1_id}, 7, 3, 0.75, 'resume_upload'),
                 (${s1_id}, 10, 3, 0.80, 'cert_verification'),
                 (${s1_id}, 18, 4, 0.70, 'resume_upload')`);
+            await db.query(`INSERT INTO academics (student_id, semester, gpa, attendance) VALUES 
+                (${s1_id}, 'Sem 1', 3.40, 92.0),
+                (${s1_id}, 'Sem 2', 3.55, 94.0),
+                (${s1_id}, 'Sem 3', 3.68, 95.0)`);
 
             // Priya Sharma
             const s2 = await db.query("INSERT INTO students (name, email, github_url) VALUES ('Priya Sharma', 'priya.s@example.edu', 'github.com/priyasharma') RETURNING id");
@@ -209,6 +213,10 @@ async function runSeed() {
                 (${s2_id}, 12, 4, 0.90, 'cert_verification'),
                 (${s2_id}, 19, 5, 0.80, 'resume_upload'),
                 (${s2_id}, 17, 4, 0.75, 'resume_upload')`);
+            await db.query(`INSERT INTO academics (student_id, semester, gpa, attendance) VALUES 
+                (${s2_id}, 'Sem 1', 3.80, 96.0),
+                (${s2_id}, 'Sem 2', 3.90, 98.0),
+                (${s2_id}, 'Sem 3', 3.95, 99.0)`);
 
             // Rohan Das
             const s3 = await db.query("INSERT INTO students (name, email, github_url) VALUES ('Rohan Das', 'rohan.das@example.edu', 'github.com/rohandas-dev') RETURNING id");
@@ -220,9 +228,52 @@ async function runSeed() {
                 (${s3_id}, 14, 3, 0.80, 'resume_upload'),
                 (${s3_id}, 15, 5, 0.95, 'github_profile'),
                 (${s3_id}, 16, 4, 0.70, 'resume_upload')`);
+            await db.query(`INSERT INTO academics (student_id, semester, gpa, attendance) VALUES 
+                (${s3_id}, 'Sem 1', 3.20, 88.0),
+                (${s3_id}, 'Sem 2', 3.35, 91.0),
+                (${s3_id}, 'Sem 3', 3.50, 93.0)`);
+
+            // Seed Quiz Questions
+            const questionsCheck = await db.query("SELECT COUNT(*) FROM quiz_questions");
+            const qCount = parseInt(questionsCheck.rows[0].count);
+            if (qCount === 0) {
+                console.log("Seeding quiz questions...");
+                const questions = [
+                    [1, "Which of the following is correct about features of JavaScript?", ["JavaScript is a lightweight, interpreted programming language.", "JavaScript is designed for creating network-centric applications.", "JavaScript is complementary to and integrated with Java.", "All of the above."], 3],
+                    [1, "How can you get the type of a JavaScript variable?", ["typeof variable", "typeof(variable)", "Both of the above.", "None of the above."], 2],
+                    [1, "Which built-in method returns the character at a specified index in JavaScript?", ["characterAt()", "getCharAt()", "charAt()", "None of the above."], 2],
+                    
+                    [2, "Which of the following is correct about Python dictionaries?", ["Keys must be unique and immutable.", "Values must be unique and immutable.", "Both keys and values must be unique and immutable.", "None of the above."], 0],
+                    [2, "How do you define a function in Python?", ["function myFunction():", "def myFunction():", "define myFunction():", "func myFunction():"], 1],
+                    [2, "Which module in Python is used to match regular expressions?", ["regex", "match", "re", "regexp"], 2],
+                    
+                    [6, "What is the correct way to declare state in a React functional component?", ["const [state, setState] = useState(initialState);", "const state = this.state;", "const state = useState(initialState);", "let state = React.declareState(initialState);"], 0],
+                    [6, "What is the purpose of the 'key' prop in React lists?", ["To uniquely identify an element among its siblings and optimize rendering.", "To bind event listeners to items.", "To encrypt list items for security.", "To define styling coordinates."], 0],
+                    [6, "Which hook should you use to perform side effects in React functional components?", ["useContext", "useEffect", "useReducer", "useCallback"], 1],
+                    
+                    [13, "Which Docker instruction sets the default command to execute when a container starts?", ["RUN", "CMD", "EXPOSE", "ENV"], 1],
+                    [13, "How do you share a folder from your host machine into a Docker container?", ["Using volumes / mount flags (-v or --mount)", "Using environment variables (-e)", "Using network ports (-p)", "You cannot share host directories."], 0],
+                    [13, "What command is used to build an image from a Dockerfile?", ["docker run", "docker image build", "docker build", "Both docker build and docker image build are valid."], 3],
+                    
+                    [10, "Which PostgreSQL keyword is used for upserts (handling duplicates on insert)?", ["ON DUPLICATE KEY UPDATE", "ON CONFLICT DO UPDATE", "REPLACE INTO", "MERGE KEY"], 1],
+                    [10, "Which command returns query performance plans and statistics in PostgreSQL?", ["EXPLAIN ANALYZE", "SHOW PROFILE", "QUERY PLAN", "TRACE STATISTICS"], 0],
+                    [10, "What type of join returns all rows from the left table, and matching rows from the right table?", ["INNER JOIN", "RIGHT JOIN", "LEFT JOIN", "FULL OUTER JOIN"], 2],
+                    
+                    [12, "What is a core architecture design benefit of ShaktiDB compared to plain PostgreSQL?", ["Native relational-graph storage engine extension with high-performance edge traversal.", "It is a purely in-memory NoSQL database.", "It does not support SQL commands.", "It only runs on web browsers."], 0],
+                    [12, "How does ShaktiDB optimize large-scale graph relationships in relational schemas?", ["By storing all data as JSON strings.", "Using hybrid edge-table indexing and integrated traversal query plans.", "By disabling foreign key checks completely.", "By using XML schemas."], 1],
+                    [12, "ShaktiDB falls back to standard PostgreSQL SQL standards, making it...", ["Incompatible with standard postgres drivers.", "Fully backwards compatible with standard postgres tooling and client wrappers.", "Slower than SQLite.", "Only queryable using proprietary interfaces."], 1]
+                ];
+                
+                for (const q of questions) {
+                    await db.query(
+                        "INSERT INTO quiz_questions (skill_id, question, options, answer_idx) VALUES ($1, $2, $3, $4)",
+                        [q[0], q[1], q[2], q[3]]
+                    );
+                }
+            }
         }
     } else {
-        console.log("Mock data already pre-loaded in db.js memory cache.");
+        console.log("Mock database mode active. Seeding bypassed.");
     }
 
     console.log("Database seeding completed successfully!");

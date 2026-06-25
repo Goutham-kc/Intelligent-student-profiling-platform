@@ -13,6 +13,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Vis.js Network for graph visualization -->
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <!-- Chart.js for progression metrics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -129,15 +131,27 @@
                                         <span id="profile-email">email@example.edu</span>
                                         <a href="#" target="_blank" id="profile-github" class="github-link"><i class="fa-brands fa-github"></i> View Profile</a>
                                     </div>
-                                    <button class="delete-btn" onclick="deleteStudentProfile()" title="Delete Profile">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
+                                    <div class="profile-actions" style="display: flex; gap: 8px; align-items: center;">
+                                        <button class="export-btn btn-secondary" onclick="window.print()" title="Export Profile Report" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); border-radius: var(--radius-sm); padding: 8px 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; transition: var(--transition-fast);">
+                                            <i class="fa-solid fa-file-pdf"></i> Export
+                                        </button>
+                                        <button class="delete-btn" onclick="deleteStudentProfile()" title="Delete Profile">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div class="profile-skills-summary">
                                     <h3>Skill Summary</h3>
                                     <div class="skills-chips-container" id="profile-skills-chips">
                                         <!-- Skill badges will go here -->
+                                    </div>
+                                </div>
+
+                                <div class="profile-academic-trends">
+                                    <h3>Academic Progression Trends</h3>
+                                    <div class="chart-container" style="position: relative; height: 180px; width: 100%; margin-top: 10px;">
+                                        <canvas id="academic-trends-chart"></canvas>
                                     </div>
                                 </div>
 
@@ -194,8 +208,15 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="ingest-file">Upload PDF Resume / Profile Document <span class="required" id="file-required-star">*</span></label>
-                                    <input type="file" id="ingest-file" accept=".pdf" required style="padding: 10px; background: var(--bg-input); border: 1px solid var(--border-color); border-radius: var(--radius-md); color: var(--text-main);">
+                                    <label>Upload PDF Resume / Profile Document <span class="required" id="file-required-star">*</span></label>
+                                    <div class="dropzone" id="resume-dropzone">
+                                        <div class="dropzone-content">
+                                            <i class="fa-solid fa-cloud-arrow-up dropzone-icon"></i>
+                                            <span class="dropzone-text">Drag & Drop your PDF resume here or <span class="browse-link">browse</span></span>
+                                            <span class="dropzone-file-info" id="dropzone-file-name">Supports PDF format (Max 5MB)</span>
+                                        </div>
+                                        <input type="file" id="ingest-file" accept=".pdf" required class="hidden-file-input">
+                                    </div>
                                 </div>
 
                                 <div class="form-group-checkbox">
@@ -280,6 +301,16 @@
                         </div>
                         <div class="graph-canvas-container">
                             <div id="skill-network-canvas"></div>
+                            
+                            <!-- Graph Detail Drawer Overlay -->
+                            <div class="graph-detail-drawer glass hidden" id="graph-node-drawer">
+                                <button class="close-drawer-btn" onclick="closeNodeDrawer()">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                                <div class="drawer-content" id="node-drawer-content">
+                                    <!-- Populated dynamically via JS -->
+                                </div>
+                            </div>
                         </div>
                         <div class="graph-footer">
                             <p><i class="fa-solid fa-circle-info"></i> Nodes represent students and skills. Drag nodes to explore. Hover over skills to see proficiency (edge thickness) and source confidence.</p>
@@ -415,6 +446,60 @@
                     <!-- Logs will print here dynamically -->
                 </div>
             </footer>
+            <!-- Interactive Skill Assessment Modal (Pluralsight Style) -->
+            <div class="modal-overlay hidden" id="assessment-modal">
+                <div class="modal-card glass">
+                    <button class="modal-close-btn" onclick="closeAssessmentModal()">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                    <div class="modal-header">
+                        <i class="fa-solid fa-graduation-cap modal-header-icon"></i>
+                        <div>
+                            <h3 id="assessment-skill-title">Skill IQ Assessment</h3>
+                            <p class="modal-subtitle">Verify your competency level via 3 quick questions</p>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-body" id="assessment-modal-body">
+                        <!-- Question State -->
+                        <div id="assessment-question-view">
+                            <div class="assessment-progress-bar">
+                                <div class="progress-fill" id="assessment-progress-fill" style="width: 33%"></div>
+                            </div>
+                            <div class="question-number" id="assessment-question-num">Question 1 of 3</div>
+                            <h4 class="question-text" id="assessment-question-text">Question Text?</h4>
+                            <div class="options-container" id="assessment-options-container">
+                                <!-- Dynamic Options buttons -->
+                            </div>
+                        </div>
+
+                        <!-- Scorecard / Result State -->
+                        <div class="hidden" id="assessment-result-view">
+                            <div class="scorecard-icon" id="assessment-scorecard-icon">
+                                <i class="fa-solid fa-award"></i>
+                            </div>
+                            <h3 class="scorecard-title" id="assessment-scorecard-title">Assessment Completed!</h3>
+                            <p class="scorecard-desc" id="assessment-scorecard-desc">Your results have been validated.</p>
+                            
+                            <div class="scorecard-metrics">
+                                <div class="metric-box">
+                                    <span class="metric-label">Score</span>
+                                    <span class="metric-val" id="assessment-score-val">3/3</span>
+                                </div>
+                                <div class="metric-box">
+                                    <span class="metric-label">Verified Skill Level</span>
+                                    <span class="metric-val" id="assessment-level-val">Level 4</span>
+                                </div>
+                            </div>
+
+                            <button class="modal-action-btn" onclick="closeAssessmentModal()">
+                                <i class="fa-solid fa-circle-check"></i> Complete & Update Profile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
